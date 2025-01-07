@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -25,8 +26,6 @@ type Worker struct {
 func (w *Worker) Process(wg *sync.WaitGroup, stopCh <-chan bool, chTask <-chan Task) {
 	defer wg.Done()
 
-	ticker := time.NewTicker(500 * time.Millisecond)
-
 	for {
 		select {
 		case task, ok := <-chTask:
@@ -39,8 +38,6 @@ func (w *Worker) Process(wg *sync.WaitGroup, stopCh <-chan bool, chTask <-chan T
 			fmt.Printf("Task %d finished by worker %d\n", task.Id, w.Id)
 		case <-stopCh:
 			return
-		case <-ticker.C:
-			fmt.Printf("Free worker: %d\n", w.Id)
 		}
 	}
 }
@@ -58,25 +55,26 @@ func generateTask(wg *sync.WaitGroup, chTask chan<- Task, taskNumber int) {
 }
 
 func main() {
+	taskCount := flag.Int("tasks", 20, "number of tasks to generate")
+	workerCount := flag.Int("workers", 3, "number of workers to create")
+	flag.Parse()
+
+	fmt.Printf("Starting app with %d tasks and %d workers\n", *taskCount, *workerCount)
+
 	var wg sync.WaitGroup
 	var wgT sync.WaitGroup
 
-	taskCount := 20
-	workerCount := 3
-
 	workers := []Worker{}
 
-	for i := 0; i < workerCount; i++ {
+	for i := 0; i < *workerCount; i++ {
 		workers = append(workers, Worker{Id: i})
 	}
 
-	taskChannel := make(chan Task, taskCount)
+	taskChannel := make(chan Task, *taskCount)
 	stopChannel := make(chan bool)
 
-	wg.Add(workerCount + 1)
-	wgT.Add(taskCount)
-
-	// go listenForTaskCreation(stopChannel, taskChannel)
+	wg.Add(*workerCount + 1)
+	wgT.Add(*taskCount)
 
 	for _, worker := range workers {
 		go worker.Process(
@@ -86,7 +84,7 @@ func main() {
 
 	go func() {
 		wg.Done()
-		for i := 0; i < taskCount; i++ {
+		for i := 0; i < *taskCount; i++ {
 			go generateTask(&wgT, taskChannel, i)
 		}
 		wgT.Wait()
