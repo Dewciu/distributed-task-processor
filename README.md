@@ -20,13 +20,13 @@ This project demonstrates a simple distributed task processor in Go. It consists
 To run the application, use the following command:
 
 ```sh
-go run main.go
+go run main.go -tasks=<number_of_tasks> -workers=<number_of_workers>
 ```
 
 ## Configuration
 
-- `taskCount`: The number of tasks to be processed.
-- `workerCount`: The number of workers available to process tasks.
+- `-tasks`: The number of tasks to be processed (default is 20).
+- `-workers`: The number of workers available to process tasks (default is 3).
 
 ## Example Output
 
