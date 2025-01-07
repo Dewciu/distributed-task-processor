@@ -23,7 +23,7 @@ type Worker struct {
 	Id int
 }
 
-func (w *Worker) Process(wg *sync.WaitGroup, stopCh <-chan bool, chTask <-chan Task) {
+func (w *Worker) Process(wg *sync.WaitGroup, chTask <-chan Task) {
 	defer wg.Done()
 
 	for {
@@ -36,8 +36,6 @@ func (w *Worker) Process(wg *sync.WaitGroup, stopCh <-chan bool, chTask <-chan T
 			fmt.Printf("Worker %d is processing task %d for %s\n", w.Id, task.Id, task.ProcessTime.String())
 			time.Sleep(task.ProcessTime)
 			fmt.Printf("Task %d finished by worker %d\n", task.Id, w.Id)
-		case <-stopCh:
-			return
 		}
 	}
 }
@@ -71,14 +69,13 @@ func main() {
 	}
 
 	taskChannel := make(chan Task, *taskCount)
-	stopChannel := make(chan bool)
 
 	wg.Add(*workerCount + 1)
 	wgT.Add(*taskCount)
 
 	for _, worker := range workers {
 		go worker.Process(
-			&wg, stopChannel, taskChannel,
+			&wg, taskChannel,
 		)
 	}
 
